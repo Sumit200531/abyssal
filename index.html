@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ABYSSAL — a bioluminescent deep-sea arena shooter with roguelite upgrades, built with Three.js." />
+  <meta name="theme-color" content="#03131d" />
+  <title>ABYSSAL</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%2303131d' stroke='%233df2ff' stroke-width='2'/%3E%3Cellipse cx='16' cy='17' rx='8' ry='4.5' fill='%23ffb23a'/%3E%3Ccircle cx='20' cy='16' r='2' fill='%233df2ff'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Saira+Stencil+One&family=Saira:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="scene"></canvas>
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="hurt" id="hurt" aria-hidden="true"></div>
+    <div class="reticle" id="reticle" hidden aria-hidden="true"><i></i></div>
+
+    <!-- HUD -->
+    <div class="hud" id="hud" hidden>
+      <div class="hud-tl">
+        <div class="label">Score</div>
+        <div class="score" id="hudScore">0</div>
+        <div class="sub-row"><span class="combo" id="hudCombo">×1</span><span class="best">Best <b id="hudBest">0</b></span></div>
+      </div>
+      <div class="hud-tc">
+        <div class="wave"><span class="label">Wave</span><b id="hudWave">1</b></div>
+        <div class="wave-left" id="hudLeft">—</div>
+        <div class="boss" id="bossBar" hidden>
+          <div class="boss-name">LEVIATHAN</div>
+          <div class="boss-track"><i id="bossFill"></i></div>
+        </div>
+      </div>
+      <div class="hud-tr">
+        <div class="lvl"><span class="label">Level</span><b id="hudLevel">1</b></div>
+        <div class="kills"><span class="label">Kills</span><b id="hudKills">0</b></div>
+        <div class="depth"><span class="label">Depth</span><b id="hudDepth">4,000 m</b></div>
+      </div>
+      <div class="hud-bl">
+        <div class="label">Hull</div>
+        <div class="hp" id="hudHp"></div>
+      </div>
+      <div class="hud-br">
+        <div class="ability" id="abDash"><div class="ab-ring"><svg viewBox="0 0 24 24"><path d="M4 12h11M11 6l6 6-6 6" /><path d="M3 7h4M3 17h4" /></svg></div><kbd>Space</kbd></div>
+        <div class="ability" id="abSonar"><div class="ab-ring"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.5" /><path d="M7 7a7 7 0 0 0 0 10M17 7a7 7 0 0 1 0 10M4 4a11 11 0 0 0 0 16M20 4a11 11 0 0 1 0 16" /></svg></div><kbd>E</kbd></div>
+      </div>
+      <div class="xp"><i id="xpFill"></i></div>
+      <div class="toasts" id="toasts" aria-live="polite"></div>
+    </div>
+
+    <!-- Title -->
+    <section class="screen title-screen" id="screenTitle">
+      <div class="title-wrap">
+        <p class="kicker"><span class="dot"></span>Bathysphere LUMEN-7 · 4,000 m</p>
+        <h1 class="logo">ABYSSAL</h1>
+        <p class="tagline">The deep is waking up. Keep your light on, hold the trench, and survive as long as you can.</p>
+        <button class="btn primary" id="btnStart" type="button"><span>Dive</span><kbd>Enter</kbd></button>
+        <div class="title-best">Best score <b id="titleBest">0</b> · Deepest wave <b id="titleWave">0</b></div>
+      </div>
+      <div class="card controls">
+        <h2>Controls</h2>
+        <ul>
+          <li><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span>Move</li>
+          <li><span><kbd>Mouse</kbd></span>Aim</li>
+          <li><span><kbd>Click</kbd> hold</span>Fire</li>
+          <li><span><kbd>Space</kbd></span>Dash</li>
+          <li><span><kbd>E</kbd> / <kbd>Right-click</kbd></span>Sonar pulse</li>
+          <li><span><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd></span>Pick upgrade</li>
+          <li><span><kbd>P</kbd> / <kbd>Esc</kbd></span>Pause</li>
+          <li><span><kbd>M</kbd> · <kbd>Q</kbd></span>Mute · Quality</li>
+        </ul>
+        <div class="toggles">
+          <button class="chip" id="btnMute" type="button">Sound: On</button>
+          <button class="chip" id="btnQuality" type="button">Quality: High</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Level up -->
+    <section class="screen modal" id="screenLevel" hidden>
+      <div class="levelup">
+        <p class="kicker center"><span class="dot"></span>Level <b id="lvlNum">2</b> reached</p>
+        <h2 class="panel-title">Choose an upgrade</h2>
+        <div class="cards" id="cards"></div>
+      </div>
+    </section>
+
+    <!-- Pause -->
+    <section class="screen modal" id="screenPause" hidden>
+      <div class="panel">
+        <p class="kicker"><span class="dot"></span>Dive suspended</p>
+        <h2 class="panel-title">Paused</h2>
+        <div class="stack">
+          <button class="btn primary" id="btnResume" type="button"><span>Resume</span><kbd>P</kbd></button>
+          <button class="btn" id="btnRestartP" type="button"><span>Restart</span><kbd>R</kbd></button>
+          <button class="btn" id="btnMuteP" type="button"><span id="muteLabelP">Sound: On</span><kbd>M</kbd></button>
+          <button class="btn" id="btnQualityP" type="button"><span id="qualityLabelP">Quality: High</span><kbd>Q</kbd></button>
+          <button class="btn ghost" id="btnMenu" type="button"><span>Surface (title)</span><kbd>T</kbd></button>
+        </div>
+        <div class="build" id="buildList"></div>
+      </div>
+    </section>
+
+    <!-- Game over -->
+    <section class="screen modal" id="screenOver" hidden>
+      <div class="panel over">
+        <p class="kicker red center">Signal lost</p>
+        <h2 class="panel-title big">HULL CRUSHED</h2>
+        <div class="new-best" id="newBest" hidden>New best score</div>
+        <div class="final-score" id="finalScore">0</div>
+        <div class="final-label">Final score</div>
+        <dl class="stats">
+          <div><dt>Wave</dt><dd id="stWave">1</dd></div>
+          <div><dt>Kills</dt><dd id="stKills">0</dd></div>
+          <div><dt>Level</dt><dd id="stLevel">1</dd></div>
+          <div><dt>Time</dt><dd id="stTime">0:00</dd></div>
+          <div><dt>Best</dt><dd id="stBest">0</dd></div>
+        </dl>
+        <div class="row">
+          <button class="btn primary" id="btnRestart" type="button"><span>Dive again</span><kbd>Enter</kbd></button>
+          <button class="btn ghost" id="btnMenuO" type="button"><span>Title</span><kbd>T</kbd></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen modal" id="screenError" hidden>
+      <div class="panel">
+        <p class="kicker red">Graphics unavailable</p>
+        <h2 class="panel-title">WebGL is off</h2>
+        <p class="err-text">ABYSSAL needs WebGL 2. Turn on hardware acceleration in your browser settings, update your graphics driver, or try a recent Chrome, Edge or Firefox.</p>
+      </div>
+    </section>
+    <div class="fps" id="fps" hidden></div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
