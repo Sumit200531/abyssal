@@ -1,0 +1,19 @@
+{
+  "name": "abyssal",
+  "private": true,
+  "version": "1.0.0",
+  "description": "A bioluminescent deep-sea arena shooter with roguelite upgrades, built with Three.js and Vite.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "three": "0.170.0"
+  },
+  "devDependencies": {
+    "vite": "5.4.21"
+  },
+  "license": "MIT"
+}
